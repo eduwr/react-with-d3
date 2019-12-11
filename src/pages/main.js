@@ -1,14 +1,10 @@
 import React from 'react';
-import barChart from '../charts/chart';
+import BarChart from '../charts/chart';
 
 export default function Main() {
-
-
     return (
-    <div className="main">
-        <div className="chart">
-            <barChart />
+        <div className="chart" style={{height: '80vh'}}>
+            <BarChart />
         </div>
-    </div>
     )
 }

@@ -4,8 +4,48 @@ import {
     select,
     scaleBand,
     scaleLinear,
-    max,
+    max
 } from 'd3';
+
+
+// High Order Component that wraps a component inside a lifecycle component
+function Responsive(Component) {
+    return class extends React.Component {
+        constructor(){
+            super()
+            this.state = { width: undefined, height: undefined }
+            this.resize = this.resize.bind(this)
+        }
+        componentDidMount() {
+            window.addEventListener('resize', this.resize)
+            this.resize();
+        }
+
+        resize () {
+            const node = this.node;
+            const bounds = node.getBoundingClientRect();
+            const width = bounds.width;
+            const height = bounds.height;
+            this.setState({width, height})  
+        }
+        render() {
+            const { width, height } = this.state;
+            return( 
+                <div 
+                    style={{width: '100%', height: '100%'}}
+                    ref={node => { this.node = node; }}
+                >
+                    {
+                        width && <Component
+                            width={width}
+                            height={height}
+                        />
+                    }
+                </div>
+            )
+        }
+    }
+}
 
 class BarChart extends React.Component {
     constructor () {
@@ -13,41 +53,45 @@ class BarChart extends React.Component {
         this.state = {
             data: dataSet
         };
+        this.draw = this.draw.bind(this);
     };
 
     componentDidMount() {
+        window.addEventListener('resize', this.draw)
         this.draw();
     }
 
     draw() {
         const node = select(this.node);
-        const bounds = node.node().getBoundingClientRect;
-        const w = bounds.width;
-        const h = bounds.height;
+        const { width: w, height: h } = this.props;
         const { data } = this.state
         
         const xScale = scaleBand();
         xScale.domain(data.map(d => d.year));
+        xScale.padding(0.1)
         xScale.range([0, w]);
 
         const yScale = scaleLinear();
-        const maxY = max(data.forEach(d => d.gdp));
-        yScale.domain([0, maxY]);
+        yScale.domain([0, max(data.map(d => d.gdp))]);
         yScale.range([0, h]);
 
         const upd = node.selectAll('rect').data(data);
         upd.enter()
             .append('rect')
-            .attr('x', d => xScale(d.year))
-            .attr('y', d => 0)
-            .attr('width', xScale.bandwidth())
-            .attr('height', d => yScale(d.gdp))
-            .attr('fill', 'blue')
-
+                .merge(upd)
+                .attr('x', d => xScale(d.year))
+                .attr('y', d => h - yScale(d.gdp))
+                .attr('width', xScale.bandwidth())
+                .attr('height', d => yScale(d.gdp))
+                .attr('fill', 'blue')
     }
 
     componentDidUpdate() {
         this.draw();
+    }
+
+    componentWillMount() {
+        window.removeEventListener('resize', this.draw)   
     }
 
     render() {
@@ -55,7 +99,7 @@ class BarChart extends React.Component {
             <svg
                 style={{width: '100%', height: '100%'}}
                 ref={node => {
-                    this.node=node;
+                    this.node = node;
                 }}
             >
             </svg>
@@ -63,4 +107,4 @@ class BarChart extends React.Component {
     }
 }
 
-export default BarChart;
+export default Responsive(BarChart);

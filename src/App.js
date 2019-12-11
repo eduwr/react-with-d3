@@ -1,17 +1,13 @@
 import React from 'react';
 
-import BarChart from './charts/chart';
+import Router from './routes'
 
 function App() {
 
   return (
-    <div className="container">
-
-      <div className="content">
-        <BarChart />
-        
+      <div className="container">
+        <Router />
       </div>
-    </div>
   );
 }
 
